@@ -1,29 +1,50 @@
-// const express = require('express');
-// const cors = require('cors');
 import express from 'express'
 import cors from 'cors'
+import Database from 'better-sqlite3'
 
 const app = express();
+const PORT = 3000;
+
+const db = new Database('nomadsync.db');
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`)
+
 app.use(cors());
 app.use(express.json());
 
-// 'database' :D
-const itineraryEvents = [];
-
 app.get('/api/events', (req, res) => {
-    res.json(itineraryEvents);
+    try {
+        const stmt = db.prepare('SELECT * FROM events ORDER BY id DESC');
+        const events = stmt.all();
+        res.json(events);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 })
 
 app.post('/api/events', (req, res) => {
-    const newEvent = {
-        id: Date.now(),
-        title: req.body.title,
-    };
-    itineraryEvents.push(newEvent);
-    res.status(201).json(newEvent);
+    const {title} = req.body;
+    if (!title) {
+        return res.status(400).json({ error: 'Title is required'});
+    }
+
+    try {
+        const stmt = db.prepare('INSERT INTO events (title) VALUES (?)');
+        const result = stmt.run(title);
+
+        const newEvent = db.prepare('SELECT * FROM events WHERE id = ?').get(result.lastInsertRowid);
+        res.status(201).json(newEvent);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 })
 
-const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
