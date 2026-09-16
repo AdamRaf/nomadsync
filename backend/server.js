@@ -45,6 +45,24 @@ app.post('/api/events', (req, res) => {
     }
 })
 
+app.delete('/api/events/:id', (req, res) => {
+    const {id} = req.params;
+
+    try {
+        const stmt = db.prepare('DELETE FROM events WHERE id = ?');
+        const result = stmt.run(id);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+        
+        res.json({ message: 'Event deleted successfully' });
+    } catch (err) {
+        console.error('Database error:', err);
+        res.status(500).json({ error: 'Failed to delete event'})
+    }
+})
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })

@@ -52,6 +52,15 @@ export default function App() {
     }
   }
 
+  const handleDelete = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:3000/api/events/${id}`);
+      setEvents(events.filter(event => event.id !== id));
+    } catch (err) {
+      console.error('Failed to delete event:', err);
+    }
+  }
+
   return (
     <div>
       <h1>Nomadsync</h1>
@@ -72,7 +81,12 @@ export default function App() {
 
       <ul>
         {events.map((event) => (
-          <li key={event.id}>{event.title}</li>
+          <li key={event.id}>
+            {event.title}
+            <button onClick={() => handleDelete(event.id)}>
+              Delete
+            </button>
+          </li>
         ))}
       </ul>
     </div>
