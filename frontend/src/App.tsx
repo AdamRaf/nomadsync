@@ -10,6 +10,8 @@ export default function App() {
   const [events, setEvents] = useState<ItineraryEvent[]>([]);
   const [newEventTitle, setNewEventTitle] = useState('');
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,6 +63,23 @@ export default function App() {
     }
   }
 
+  const handleUpdate = async (id: number) => {
+    try {
+      await axios.put(`http://localhost:3000/api/events/${id}`, {
+        title: editTitle
+      })
+      
+      setEvents((prevEvents) => prevEvents.map((event) => (
+        event.id === id ? { ...event, title: editTitle } : event
+      )))
+      
+      setEditingId(null);
+      setEditTitle("");
+    } catch (err) {
+      console.error('Failed to update event:', err);
+    }
+  }
+
   return (
     <div>
       <h1>Nomadsync</h1>
@@ -82,10 +101,32 @@ export default function App() {
       <ul>
         {events.map((event) => (
           <li key={event.id}>
-            {event.title}
-            <button onClick={() => handleDelete(event.id)}>
-              Delete
-            </button>
+            {editingId === event.id ? (
+              <>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                />
+                <button onClick={() => handleUpdate(event.id)}>Save</button>
+                <button onClick={() => setEditingId(null)}>Cancel</button>
+              </>
+            ) : (
+              <>
+                {event.title}
+                <button
+                  onClick={() => {
+                    setEditingId(event.id);
+                    setEditTitle(event.title);
+                  }}
+                >
+                  Edit
+                </button>
+                <button onClick={() => handleDelete(event.id)}>
+                  Delete
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>

@@ -63,6 +63,29 @@ app.delete('/api/events/:id', (req, res) => {
     }
 })
 
+app.put('/api/events/:id', (req, res) => {
+    console.log('qweqwe')
+    const {id} = req.params;
+    const {title} = req.body;
+
+    if (!title) {
+        return res.status(400).json({ error: 'Title is required' });
+    }
+
+    try {
+        const stmt = db.prepare('UPDATE events SET title = ? WHERE id = ?');
+        const result = stmt.run(title, id);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+
+        res.json({ id, title});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+})
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
