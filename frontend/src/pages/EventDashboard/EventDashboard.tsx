@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import axios from "axios"
 import type { ItineraryEvent } from "../../entities/event/types";
 import { createEvent, deleteEvent, fetchEvents, updateEvent } from "../../entities/event/api";
+import { useLiveEvents } from "../../entities/event/useLiveEvents";
 
 export const EventDashboard = () => {
   const [events, setEvents] = useState<ItineraryEvent[]>([]);
@@ -9,6 +10,18 @@ export const EventDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
+
+  const safelyAppendEvent = useCallback((newEvent: ItineraryEvent) => {
+    setEvents((prevEvents) => {
+      const alreadyExists = prevEvents.some(event => event.id === newEvent.id);
+
+      if (alreadyExists) return prevEvents;
+
+      return [...prevEvents, newEvent]
+    })
+  }, [])
+
+  useLiveEvents(safelyAppendEvent);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -38,7 +51,7 @@ export const EventDashboard = () => {
     setLoading(true);
     try {
       const response = await createEvent(newEventTitle);
-      setEvents((prevEvents) => [...prevEvents, response]);
+      safelyAppendEvent(response);
       setNewEventTitle('');
     } catch (err) {
       console.error('Error adding event:', err);
