@@ -76,6 +76,9 @@ app.delete('/api/events/:id', (req, res) => {
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Event not found' });
         }
+
+        const deletedEvent = { id: Number(id) };
+        io.emit('event_deleted', deletedEvent)
         
         res.json({ message: 'Event deleted successfully' });
     } catch (err) {
@@ -85,10 +88,9 @@ app.delete('/api/events/:id', (req, res) => {
 })
 
 app.put('/api/events/:id', (req, res) => {
-    console.log('qweqwe')
     const {id} = req.params;
     const {title} = req.body;
-
+ 
     if (!title) {
         return res.status(400).json({ error: 'Title is required' });
     }
@@ -100,6 +102,9 @@ app.put('/api/events/:id', (req, res) => {
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Event not found' });
         }
+
+        const updatedEvent = { id: Number(id), title };
+        io.emit('event_updated', updatedEvent);
 
         res.json({ id, title});
     } catch (err) {

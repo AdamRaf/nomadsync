@@ -21,7 +21,21 @@ export const EventDashboard = () => {
     })
   }, [])
 
-  useLiveEvents(safelyAppendEvent);
+  const safelyUpdateEvent = useCallback((updatedEvent: ItineraryEvent) => {
+    setEvents((prevEvents) => 
+      prevEvents.map((event) => event.id === updatedEvent.id ? updatedEvent : event)
+    )
+  }, [])
+
+  const safelyDeleteEvent = useCallback(({id}: {id: number}) => {
+    setEvents((prevEvents) => prevEvents.filter((event) => event.id !== id))
+  }, [])
+
+  useLiveEvents({
+    onEventAdded: safelyAppendEvent,
+    onEventUpdated: safelyUpdateEvent,
+    onEventDeleted: safelyDeleteEvent,
+  });
 
   useEffect(() => {
     const controller = new AbortController();
