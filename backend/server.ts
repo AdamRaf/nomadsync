@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 import cors from 'cors'
 import Database from 'better-sqlite3'
 import { createServer } from 'http'
@@ -36,17 +36,21 @@ io.on('connection', (socket) => {
     })
 })
 
-app.get('/api/events', (req, res) => {
+app.get('/api/events', (req: Request, res: Response) => {
     try {
         const stmt = db.prepare('SELECT * FROM events ORDER BY id DESC');
         const events = stmt.all();
         res.json(events);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        if (err instanceof Error) {
+            res.status(500).json({ error: err.message });
+        } else {
+            res.status(500).json({ error: 'Failed to fetch events' });
+        }
     }
 })
 
-app.post('/api/events', (req, res) => {
+app.post('/api/events', (req: Request, res: Response) => {
     const {title} = req.body;
     if (!title) {
         return res.status(400).json({ error: 'Title is required'});
@@ -62,11 +66,15 @@ app.post('/api/events', (req, res) => {
         
         res.status(201).json(newEvent);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        if (err instanceof Error) {
+            res.status(500).json({ error: err.message });
+        } else {
+            res.status(500).json({ error: 'Failed to create event' });
+        }
     }
 })
 
-app.delete('/api/events/:id', (req, res) => {
+app.delete('/api/events/:id', (req: Request, res: Response) => {
     const {id} = req.params;
 
     try {
@@ -83,11 +91,15 @@ app.delete('/api/events/:id', (req, res) => {
         res.json({ message: 'Event deleted successfully' });
     } catch (err) {
         console.error('Database error:', err);
-        res.status(500).json({ error: 'Failed to delete event'})
+        if (err instanceof Error) {
+            res.status(500).json({ error: err.message });
+        } else {
+            res.status(500).json({ error: 'Failed to delete event'})
+        }
     }
 })
 
-app.put('/api/events/:id', (req, res) => {
+app.put('/api/events/:id', (req: Request, res: Response) => {
     const {id} = req.params;
     const {title} = req.body;
  
@@ -108,7 +120,11 @@ app.put('/api/events/:id', (req, res) => {
 
         res.json({ id, title});
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        if (err instanceof Error) {
+            res.status(500).json({ error: err.message });
+        } else {
+            res.status(500).json({ error: 'Failed to update event' });
+        }
     }
 })
 
