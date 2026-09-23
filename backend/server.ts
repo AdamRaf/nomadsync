@@ -21,6 +21,7 @@ db.exec(`
     CREATE TABLE IF NOT EXISTS events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
+        start_time TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `)
@@ -51,16 +52,16 @@ app.get('/api/events', (req: Request, res: Response) => {
 })
 
 app.post('/api/events', (req: Request, res: Response) => {
-    const {title} = req.body;
+    const {title, start_time} = req.body;
     if (!title) {
         return res.status(400).json({ error: 'Title is required'});
     }
 
     try {
-        const stmt = db.prepare('INSERT INTO events (title) VALUES (?)');
-        const result = stmt.run(title);
+        const stmt = db.prepare('INSERT INTO events (title, start_time) VALUES (?, ?)');
+        const result = stmt.run(title, start_time);
 
-        const newEvent = { id: result.lastInsertRowid, title };
+        const newEvent = { id: result.lastInsertRowid, title, start_time };
 
         io.emit('event_added', newEvent);
         
@@ -101,7 +102,7 @@ app.delete('/api/events/:id', (req: Request, res: Response) => {
 
 app.put('/api/events/:id', (req: Request, res: Response) => {
     const {id} = req.params;
-    const {title} = req.body;
+    const {title, start_time} = req.body;
  
     if (!title) {
         return res.status(400).json({ error: 'Title is required' });
@@ -115,7 +116,7 @@ app.put('/api/events/:id', (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Event not found' });
         }
 
-        const updatedEvent = { id: Number(id), title };
+        const updatedEvent = { id: Number(id), title, start_time };
         io.emit('event_updated', updatedEvent);
 
         res.json({ id, title});

@@ -64,7 +64,7 @@ export const EventDashboard = () => {
 
     setLoading(true);
     try {
-      const response = await createEvent(newEventTitle);
+      const response = await createEvent(newEventTitle, new Date().toISOString());
       safelyAppendEvent(response);
       setNewEventTitle('');
     } catch (err) {
@@ -83,9 +83,9 @@ export const EventDashboard = () => {
     }
   }
 
-  const handleUpdate = async (id: number) => {
+  const handleUpdate = async (id: number, start_time: string) => {
     try {
-      await updateEvent(id, editTitle);
+      await updateEvent(id, editTitle, start_time);
       
       setEvents((prevEvents) => prevEvents.map((event) => (
         event.id === id ? { ...event, title: editTitle } : event
@@ -97,6 +97,10 @@ export const EventDashboard = () => {
       console.error('Failed to update event:', err);
     }
   }
+
+  const sortedEvents = [...events].sort((a, b) => (
+    a.start_time.localeCompare(b.start_time)
+  ))
 
   return (
     <div>
@@ -117,7 +121,7 @@ export const EventDashboard = () => {
       </form>
 
       <ul>
-        {events.map((event) => (
+        {sortedEvents.map((event) => (
           <li key={event.id}>
             {editingId === event.id ? (
               <>
@@ -126,12 +130,13 @@ export const EventDashboard = () => {
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                 />
-                <button onClick={() => handleUpdate(event.id)}>Save</button>
+                <button onClick={() => handleUpdate(event.id, event.start_time)}>Save</button>
                 <button onClick={() => setEditingId(null)}>Cancel</button>
               </>
             ) : (
               <>
                 {event.title}
+                <span> [{new Date(event.start_time).toLocaleString()}] </span>
                 <button
                   onClick={() => {
                     setEditingId(event.id);

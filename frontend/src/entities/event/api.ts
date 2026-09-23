@@ -6,8 +6,8 @@ export const fetchEvents = async (signal?: AbortSignal): Promise<ItineraryEvent[
     return response.data;
 }
 
-export const createEvent = async (title: string): Promise<ItineraryEvent> => {
-    const response = await apiClient.post<ItineraryEvent>('/events', { title });
+export const createEvent = async (title: string, start_time: string): Promise<ItineraryEvent> => {
+    const response = await apiClient.post<ItineraryEvent>('/events', { title, start_time });
     return response.data;
 }
 
@@ -15,6 +15,6 @@ export const deleteEvent = async (id: number): Promise<void> => {
     await apiClient.delete(`/events/${id}`);
 }
 
-export const updateEvent = async (id: number, title: string): Promise<void> => {
-    await apiClient.put(`/events/${id}`, { title });
+export const updateEvent = async (id: number, title: string, start_time: string): Promise<void> => {
+    await apiClient.put(`/events/${id}`, { title, start_time });
 }
