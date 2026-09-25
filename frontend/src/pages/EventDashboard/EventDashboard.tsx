@@ -3,6 +3,7 @@ import axios from "axios"
 import type { ItineraryEvent } from "../../entities/event/types";
 import { createEvent, deleteEvent, fetchEvents, updateEvent } from "../../entities/event/api";
 import { useLiveEvents } from "../../entities/event/useLiveEvents";
+import { EventMap } from "../../widgets/EventMap";
 
 export const EventDashboard = () => {
   const [events, setEvents] = useState<ItineraryEvent[]>([]);
@@ -105,6 +106,8 @@ export const EventDashboard = () => {
   return (
     <div>
       <h1>Nomadsync</h1>
+      
+      <EventMap events={events}/>
 
       <form onSubmit={handleSubmit}>
         <input

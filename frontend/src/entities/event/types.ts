@@ -2,6 +2,8 @@ export interface ItineraryEvent {
     id: number;
     title: string;
     start_time: string;
+    lat: number;
+    lng: number;
     created_at: string;
 }
 

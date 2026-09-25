@@ -22,6 +22,8 @@ db.exec(`
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         start_time TEXT NOT NULL,
+        lat REAL,
+        lng REAL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `)
@@ -52,16 +54,25 @@ app.get('/api/events', (req: Request, res: Response) => {
 })
 
 app.post('/api/events', (req: Request, res: Response) => {
-    const {title, start_time} = req.body;
+    const {title, start_time, lat, lng} = req.body;
     if (!title) {
         return res.status(400).json({ error: 'Title is required'});
     }
 
     try {
-        const stmt = db.prepare('INSERT INTO events (title, start_time) VALUES (?, ?)');
-        const result = stmt.run(title, start_time);
+        const stmt = db.prepare(`
+            INSERT INTO events (title, start_time, lat, lng)
+            VALUES (?, ?, ?, ?)
+        `);
+        const result = stmt.run(title, start_time, lat, lng);
 
-        const newEvent = { id: result.lastInsertRowid, title, start_time };
+        const newEvent = {
+            id: result.lastInsertRowid,
+            title,
+            start_time,
+            lat,
+            lng,
+        };
 
         io.emit('event_added', newEvent);
         
