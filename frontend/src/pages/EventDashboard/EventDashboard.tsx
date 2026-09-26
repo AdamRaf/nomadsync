@@ -10,7 +10,9 @@ export const EventDashboard = () => {
   const [newEventTitle, setNewEventTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editTitle, setEditTitle] = useState("");
+  const [editTitle, setEditTitle] = useState('');
+  const [activeLat, setActiveLat] = useState<number | ''>('');
+  const [activeLng, setActiveLng] = useState<number | ''>('');
 
   const safelyAppendEvent = useCallback((newEvent: ItineraryEvent) => {
     setEvents((prevEvents) => {
@@ -24,7 +26,11 @@ export const EventDashboard = () => {
 
   const safelyUpdateEvent = useCallback((updatedEvent: ItineraryEvent) => {
     setEvents((prevEvents) => 
-      prevEvents.map((event) => event.id === updatedEvent.id ? updatedEvent : event)
+      prevEvents.map((event) =>
+        event.id === updatedEvent.id
+          ? {...event, ...updatedEvent}
+          : event
+      )
     )
   }, [])
 
@@ -65,9 +71,16 @@ export const EventDashboard = () => {
 
     setLoading(true);
     try {
-      const response = await createEvent(newEventTitle, new Date().toISOString());
+      const response = await createEvent(
+        newEventTitle,
+        new Date().toISOString(),
+        activeLat === '' ? null : activeLat,
+        activeLng === '' ? null : activeLng,
+      );
       safelyAppendEvent(response);
       setNewEventTitle('');
+      setActiveLat('');
+      setActiveLng('');
     } catch (err) {
       console.error('Error adding event:', err);
     } finally {
@@ -99,6 +112,11 @@ export const EventDashboard = () => {
     }
   }
 
+  const handleMapClick = useCallback((lat: number, lng: number) => {
+    setActiveLat(Number(lat.toFixed(6)))
+    setActiveLng(Number(lng.toFixed(6)))
+  }, [])
+
   const sortedEvents = [...events].sort((a, b) => (
     a.start_time.localeCompare(b.start_time)
   ))
@@ -107,7 +125,7 @@ export const EventDashboard = () => {
     <div>
       <h1>Nomadsync</h1>
       
-      <EventMap events={events}/>
+      <EventMap events={events} onLocationSelect={handleMapClick}/>
 
       <form onSubmit={handleSubmit}>
         <input
@@ -116,6 +134,23 @@ export const EventDashboard = () => {
           onChange={(e) => setNewEventTitle(e.target.value)}
           placeholder="Flight to Mars"
           disabled={loading}
+        />
+
+        <input
+          type="number"
+          value={activeLat}
+          onChange={(e) => setActiveLat(Number(e.target.value))}
+          placeholder="lat"
+          disabled={loading}
+          step="any"
+        />
+        <input
+          type="number"
+          value={activeLng}
+          onChange={(e) => setActiveLng(Number(e.target.value))}
+          placeholder="lng"
+          disabled={loading}
+          step="any"
         />
 
         <button type="submit" disabled={loading}>

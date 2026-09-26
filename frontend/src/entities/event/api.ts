@@ -6,8 +6,18 @@ export const fetchEvents = async (signal?: AbortSignal): Promise<ItineraryEvent[
     return response.data;
 }
 
-export const createEvent = async (title: string, start_time: string): Promise<ItineraryEvent> => {
-    const response = await apiClient.post<ItineraryEvent>('/events', { title, start_time });
+export const createEvent = async (
+    title: string,
+    start_time: string,
+    lat: number | null,
+    lng: number | null,
+): Promise<ItineraryEvent> => {
+    const response = await apiClient.post<ItineraryEvent>('/events', {
+        title,
+        start_time,
+        lat,
+        lng,
+    });
     return response.data;
 }
 

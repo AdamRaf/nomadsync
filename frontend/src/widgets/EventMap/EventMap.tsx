@@ -1,9 +1,30 @@
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from "react-leaflet";
 import type { ItineraryEvent } from "../../entities/event/types";
 
 import 'leaflet/dist/leaflet.css'
 
-export const EventMap = ({ events }: { events: ItineraryEvent[] }) => {
+type LocationSelectHelper = (lat: number, lng: number) => void
+
+interface MapClickInterceptorProps {
+  onLocationSelect: LocationSelectHelper;
+}
+
+interface EventMapProps {
+  events: ItineraryEvent[];
+  onLocationSelect: LocationSelectHelper;
+}
+
+const MapClickInterceptor = ({ onLocationSelect }: MapClickInterceptorProps) => {
+  useMapEvents({
+    click(e) {
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    }
+  })
+
+  return null
+}
+
+export const EventMap = ({ events, onLocationSelect }: EventMapProps) => {
   return (
     <div
       style={{
@@ -22,6 +43,8 @@ export const EventMap = ({ events }: { events: ItineraryEvent[] }) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="Map data from &copy; <a href=https://www.openstreetmap.org/copyright>OpenStreetMap</a>"
         />
+
+        {onLocationSelect && <MapClickInterceptor onLocationSelect={onLocationSelect}/>}
 
         {events.map((event) => (
           event.lat && event.lng && (
