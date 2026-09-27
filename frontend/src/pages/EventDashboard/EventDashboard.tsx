@@ -4,6 +4,9 @@ import type { ItineraryEvent } from "../../entities/event/types";
 import { createEvent, deleteEvent, fetchEvents, updateEvent } from "../../entities/event/api";
 import { useLiveEvents } from "../../entities/event/useLiveEvents";
 import { EventMap } from "../../widgets/EventMap";
+import { EventSidebar } from "../../widgets/EventSidebar";
+
+import './EventDashboard.css'
 
 export const EventDashboard = () => {
   const [events, setEvents] = useState<ItineraryEvent[]>([]);
@@ -117,80 +120,31 @@ export const EventDashboard = () => {
     setActiveLng(Number(lng.toFixed(6)))
   }, [])
 
-  const sortedEvents = [...events].sort((a, b) => (
-    a.start_time.localeCompare(b.start_time)
-  ))
-
   return (
-    <div>
-      <h1>Nomadsync</h1>
-      
-      <EventMap events={events} onLocationSelect={handleMapClick}/>
-
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={newEventTitle}
-          onChange={(e) => setNewEventTitle(e.target.value)}
-          placeholder="Flight to Mars"
-          disabled={loading}
+    <div className="dashboard-wrapper">
+      <div className="dashboard-sidebar-container">
+        <EventSidebar
+          events={events}
+          handleSubmit={handleSubmit}
+          newEventTitle={newEventTitle}
+          setNewEventTitle={setNewEventTitle}
+          loading={loading}
+          activeLat={activeLat}
+          activeLng={activeLng}
+          setActiveLat={setActiveLat}
+          setActiveLng={setActiveLng}
+          editngId={editingId}
+          editTitle={editTitle}
+          setEditTitle={setEditTitle}
+          handleUpdate={handleUpdate}
+          setEditingId={setEditingId}
+          handleDelete={handleDelete}
         />
+      </div>
 
-        <input
-          type="number"
-          value={activeLat}
-          onChange={(e) => setActiveLat(Number(e.target.value))}
-          placeholder="lat"
-          disabled={loading}
-          step="any"
-        />
-        <input
-          type="number"
-          value={activeLng}
-          onChange={(e) => setActiveLng(Number(e.target.value))}
-          placeholder="lng"
-          disabled={loading}
-          step="any"
-        />
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Adding...' : 'Add Event'}
-        </button>
-      </form>
-
-      <ul>
-        {sortedEvents.map((event) => (
-          <li key={event.id}>
-            {editingId === event.id ? (
-              <>
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                />
-                <button onClick={() => handleUpdate(event.id, event.start_time)}>Save</button>
-                <button onClick={() => setEditingId(null)}>Cancel</button>
-              </>
-            ) : (
-              <>
-                {event.title}
-                <span> [{new Date(event.start_time).toLocaleString()}] </span>
-                <button
-                  onClick={() => {
-                    setEditingId(event.id);
-                    setEditTitle(event.title);
-                  }}
-                >
-                  Edit
-                </button>
-                <button onClick={() => handleDelete(event.id)}>
-                  Delete
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+      <div className="dashboard-map-container">
+        <EventMap events={events} onLocationSelect={handleMapClick}/>
+      </div>
     </div>
   )
 }

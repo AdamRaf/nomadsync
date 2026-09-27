@@ -2,6 +2,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from "react-leaf
 import type { ItineraryEvent } from "../../entities/event/types";
 
 import 'leaflet/dist/leaflet.css'
+import './EventMap.css'
 
 type LocationSelectHelper = (lat: number, lng: number) => void
 
@@ -26,18 +27,10 @@ const MapClickInterceptor = ({ onLocationSelect }: MapClickInterceptorProps) => 
 
 export const EventMap = ({ events, onLocationSelect }: EventMapProps) => {
   return (
-    <div
-      style={{
-        height: '50vh',
-        width: '80%',
-        display: 'flex',
-        justifySelf: 'center',
-      }}
-    >
+    <div className="map-wrapper">
       <MapContainer
         center={[-6.2295695, 106.7471172]} // Jakarta's lat lng from Gmap
         zoom={11}
-        style={{ height: '100%', width: '100%', borderRadius: '10px' }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -50,7 +43,7 @@ export const EventMap = ({ events, onLocationSelect }: EventMapProps) => {
           event.lat && event.lng && (
             <Marker key={event.id} position={[event.lat, event.lng]}>
               <Popup>
-                <p style={{ fontWeight: 'bold' }}>{event.title}</p>
+                <p className="popup-title">{event.title}</p>
                 <p>{new Date(event.start_time).toLocaleString()}</p>
               </Popup>
             </Marker>

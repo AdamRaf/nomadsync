@@ -1,0 +1,28 @@
+.dashboard-wrapper {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #f8fafc;
+}
+
+.dashboard-sidebar-container {
+    width: 400px;
+    min-width: 400px;
+    height: 100%;
+    background: white;
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.05);
+    z-index: 10;
+    overflow-y: auto;
+}
+
+.dashboard-map-container {
+    position: relative;
+    flex: 1;
+    height: 100%;
+}
+
+.dashboard-map-container .leaflet-container {
+    height: 100%;
+    width: 100%;
+}
