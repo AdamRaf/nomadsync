@@ -3,6 +3,7 @@ import cors from 'cors'
 import Database from 'better-sqlite3'
 import { createServer } from 'http'
 import { Server } from 'socket.io';
+import z from 'zod';
 
 const app = express();
 const PORT = 3000;
@@ -16,6 +17,17 @@ const io = new Server(httpServer, {
 })
 
 const db = new Database('nomadsync.db');
+
+const eventBodySchema = z.object({
+    title: z.string().min(1),
+    start_time: z.iso.datetime(),
+    lat: z.number().nullable().optional(),
+    lng: z.number().nullable().optional(),
+})
+
+const eventIdSchema = z.object({
+    id: z.coerce.number().int().positive()
+})
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS events (
@@ -54,10 +66,16 @@ app.get('/api/events', (req: Request, res: Response) => {
 })
 
 app.post('/api/events', (req: Request, res: Response) => {
-    const {title, start_time, lat, lng} = req.body;
-    if (!title) {
-        return res.status(400).json({ error: 'Title is required'});
+    const validationResult = eventBodySchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+        return res.status(400).json({
+            error: "Zod validation failed",
+            details: z.treeifyError(validationResult.error),
+        });
     }
+    
+    const {title, start_time, lat, lng} = validationResult.data;
 
     try {
         const stmt = db.prepare(`
@@ -87,7 +105,12 @@ app.post('/api/events', (req: Request, res: Response) => {
 })
 
 app.delete('/api/events/:id', (req: Request, res: Response) => {
-    const {id} = req.params;
+    const paramValidation = eventIdSchema.safeParse(req.params);
+    if (!paramValidation.success) {
+        return res.status(400).json({ error: 'Invalid ID format' });
+    }
+    
+    const { id } = paramValidation.data;
 
     try {
         const stmt = db.prepare('DELETE FROM events WHERE id = ?');
@@ -112,12 +135,21 @@ app.delete('/api/events/:id', (req: Request, res: Response) => {
 })
 
 app.put('/api/events/:id', (req: Request, res: Response) => {
-    const {id} = req.params;
-    const {title, start_time} = req.body;
- 
-    if (!title) {
-        return res.status(400).json({ error: 'Title is required' });
+    const paramValidation = eventIdSchema.safeParse(req.params);
+    if (!paramValidation.success) {
+        return res.status(400).json({ error: 'Invalid ID format'});
     }
+    const { id } = paramValidation.data;
+
+    const bodyValidation = eventBodySchema.safeParse(req.body);
+    if (!bodyValidation.success) {
+        return res.status(400).json({
+            error: "Zod validation error",
+            details: z.treeifyError(bodyValidation.error),
+        });
+    }
+
+    const { title, start_time } = bodyValidation.data;
 
     try {
         const stmt = db.prepare('UPDATE events SET title = ? WHERE id = ?');
