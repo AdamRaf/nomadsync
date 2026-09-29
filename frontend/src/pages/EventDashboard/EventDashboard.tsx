@@ -1,118 +1,65 @@
-import { useCallback, useEffect, useState } from "react"
-import axios from "axios"
-import type { ItineraryEvent } from "../../entities/event/types";
-import { createEvent, deleteEvent, fetchEvents, updateEvent } from "../../entities/event/api";
+import { useCallback, useState } from "react"
 import { useLiveEvents } from "../../entities/event/useLiveEvents";
 import { EventMap } from "../../widgets/EventMap";
 import { EventSidebar } from "../../widgets/EventSidebar";
 
 import './EventDashboard.css'
+import {
+  useCreateEventMutation,
+  useDeleteEventMutation,
+  useEventsQuery,
+  useUpdateEventMutation
+} from "../../entities/event/queries";
 
 export const EventDashboard = () => {
-  const [events, setEvents] = useState<ItineraryEvent[]>([]);
   const [newEventTitle, setNewEventTitle] = useState('');
-  const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [activeLat, setActiveLat] = useState<number | ''>('');
   const [activeLng, setActiveLng] = useState<number | ''>('');
 
-  const safelyAppendEvent = useCallback((newEvent: ItineraryEvent) => {
-    setEvents((prevEvents) => {
-      const alreadyExists = prevEvents.some(event => event.id === newEvent.id);
+  const { data: events = [], isLoading } = useEventsQuery();
+  const createMutation = useCreateEventMutation();
+  const updateMutation = useUpdateEventMutation();
+  const deleteMutation = useDeleteEventMutation();
 
-      if (alreadyExists) return prevEvents;
-
-      return [...prevEvents, newEvent]
-    })
-  }, [])
-
-  const safelyUpdateEvent = useCallback((updatedEvent: ItineraryEvent) => {
-    setEvents((prevEvents) => 
-      prevEvents.map((event) =>
-        event.id === updatedEvent.id
-          ? {...event, ...updatedEvent}
-          : event
-      )
-    )
-  }, [])
-
-  const safelyDeleteEvent = useCallback(({id}: {id: number}) => {
-    setEvents((prevEvents) => prevEvents.filter((event) => event.id !== id))
-  }, [])
-
-  useLiveEvents({
-    onEventAdded: safelyAppendEvent,
-    onEventUpdated: safelyUpdateEvent,
-    onEventDeleted: safelyDeleteEvent,
-  });
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const loadEvents = async () => {
-      try {
-        const response = await fetchEvents(controller.signal);
-        setEvents(response);
-      } catch (err) {
-        if (!axios.isCancel(err)) {
-          console.error('Error fetching events:', err);
-        }
-      }
-    }
-
-    loadEvents();
-
-    return () => {
-      controller.abort();
-    }
-  }, [])
+  useLiveEvents();
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!newEventTitle.trim()) return;
 
-    setLoading(true);
-    try {
-      const response = await createEvent(
-        newEventTitle,
-        new Date().toISOString(),
-        activeLat === '' ? null : activeLat,
-        activeLng === '' ? null : activeLng,
-      );
-      safelyAppendEvent(response);
-      setNewEventTitle('');
-      setActiveLat('');
-      setActiveLng('');
-    } catch (err) {
-      console.error('Error adding event:', err);
-    } finally {
-      setLoading(false);
-    }
+    createMutation.mutate(
+      {
+        title: newEventTitle,
+        start_time: new Date().toISOString(),
+        lat: activeLat === '' ? null : activeLat,
+        lng: activeLng === '' ? null : activeLng,
+      },
+      {
+        onSuccess: () => {
+          setNewEventTitle('');
+          setActiveLat('');
+          setActiveLng('');
+        }
+      }
+    )
   }
 
   const handleDelete = async (id: number) => {
-    try {
-      await deleteEvent(id);
-      setEvents(events.filter(event => event.id !== id));
-    } catch (err) {
-      console.error('Failed to delete event:', err);
-    }
+    deleteMutation.mutate(id);
   }
 
   const handleUpdate = async (id: number, start_time: string) => {
-    try {
-      await updateEvent(id, editTitle, start_time);
-      
-      setEvents((prevEvents) => prevEvents.map((event) => (
-        event.id === id ? { ...event, title: editTitle } : event
-      )))
-      
-      setEditingId(null);
-      setEditTitle("");
-    } catch (err) {
-      console.error('Failed to update event:', err);
-    }
+    updateMutation.mutate(
+      { id, title: editTitle, start_time},
+      {
+        onSuccess: () => {
+          setEditingId(null);
+          setEditTitle('');
+        }
+      }
+    )
   }
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
@@ -128,7 +75,7 @@ export const EventDashboard = () => {
           handleSubmit={handleSubmit}
           newEventTitle={newEventTitle}
           setNewEventTitle={setNewEventTitle}
-          loading={loading}
+          loading={isLoading || createMutation.isPending}
           activeLat={activeLat}
           activeLng={activeLng}
           setActiveLat={setActiveLat}
