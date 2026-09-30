@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
-import Database from 'better-sqlite3'
 import { createServer } from 'http'
 import { Server } from 'socket.io';
 import z from 'zod';
+import { pool } from './db.js';
 
 const app = express();
 const PORT = 3000;
@@ -16,8 +16,6 @@ const io = new Server(httpServer, {
     }
 })
 
-const db = new Database('nomadsync.db');
-
 const eventBodySchema = z.object({
     title: z.string().min(1),
     start_time: z.iso.datetime(),
@@ -29,16 +27,25 @@ const eventIdSchema = z.object({
     id: z.coerce.number().int().positive()
 })
 
-db.exec(`
-    CREATE TABLE IF NOT EXISTS events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        start_time TEXT NOT NULL,
-        lat REAL,
-        lng REAL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-`)
+const initDB = async () => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS events (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                lat DOUBLE PRECISION,
+                lng DOUBLE PRECISION,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('PostgreSQL event table initialized');
+    } catch (err) {
+        console.error('Failed to initialize PostgreSQL table', err);
+    }
+}
+
+initDB();
 
 app.use(cors());
 app.use(express.json());
@@ -51,11 +58,10 @@ io.on('connection', (socket) => {
     })
 })
 
-app.get('/api/events', (req: Request, res: Response) => {
+app.get('/api/events', async (req: Request, res: Response) => {
     try {
-        const stmt = db.prepare('SELECT * FROM events ORDER BY id DESC');
-        const events = stmt.all();
-        res.json(events);
+        const result = await pool.query('SELECT * FROM events ORDER BY id DESC');
+        res.json(result.rows);
     } catch (err) {
         if (err instanceof Error) {
             res.status(500).json({ error: err.message });
@@ -65,7 +71,7 @@ app.get('/api/events', (req: Request, res: Response) => {
     }
 })
 
-app.post('/api/events', (req: Request, res: Response) => {
+app.post('/api/events', async (req: Request, res: Response) => {
     const validationResult = eventBodySchema.safeParse(req.body);
 
     if (!validationResult.success) {
@@ -78,19 +84,19 @@ app.post('/api/events', (req: Request, res: Response) => {
     const {title, start_time, lat, lng} = validationResult.data;
 
     try {
-        const stmt = db.prepare(`
+        const stmt = `
             INSERT INTO events (title, start_time, lat, lng)
-            VALUES (?, ?, ?, ?)
-        `);
-        const result = stmt.run(title, start_time, lat, lng);
-
-        const newEvent = {
-            id: result.lastInsertRowid,
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `;
+        const result = await pool.query(stmt, [
             title,
             start_time,
-            lat,
-            lng,
-        };
+            lat ?? null,
+            lng ?? null,
+        ]);
+
+        const newEvent = result.rows[0];
 
         io.emit('event_added', newEvent);
         
@@ -104,7 +110,7 @@ app.post('/api/events', (req: Request, res: Response) => {
     }
 })
 
-app.delete('/api/events/:id', (req: Request, res: Response) => {
+app.delete('/api/events/:id', async (req: Request, res: Response) => {
     const paramValidation = eventIdSchema.safeParse(req.params);
     if (!paramValidation.success) {
         return res.status(400).json({ error: 'Invalid ID format' });
@@ -113,10 +119,9 @@ app.delete('/api/events/:id', (req: Request, res: Response) => {
     const { id } = paramValidation.data;
 
     try {
-        const stmt = db.prepare('DELETE FROM events WHERE id = ?');
-        const result = stmt.run(id);
+        const result = await pool.query('DELETE FROM events WHERE id = $1', [id]);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Event not found' });
         }
 
@@ -134,7 +139,7 @@ app.delete('/api/events/:id', (req: Request, res: Response) => {
     }
 })
 
-app.put('/api/events/:id', (req: Request, res: Response) => {
+app.put('/api/events/:id', async (req: Request, res: Response) => {
     const paramValidation = eventIdSchema.safeParse(req.params);
     if (!paramValidation.success) {
         return res.status(400).json({ error: 'Invalid ID format'});
@@ -152,10 +157,13 @@ app.put('/api/events/:id', (req: Request, res: Response) => {
     const { title, start_time } = bodyValidation.data;
 
     try {
-        const stmt = db.prepare('UPDATE events SET title = ? WHERE id = ?');
-        const result = stmt.run(title, id);
+        const result = await pool.query(
+            'UPDATE events SET title = $1 WHERE id = $2', [
+                title, id
+            ]
+        );
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Event not found' });
         }
 
