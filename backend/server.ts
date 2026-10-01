@@ -5,8 +5,8 @@ import { Server } from 'socket.io';
 import z from 'zod';
 import { pool } from './db.js';
 
-const app = express();
-const PORT = 3000;
+export const app = express();
+const PORT = process.env.PORT || 3000;
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
@@ -180,6 +180,8 @@ app.put('/api/events/:id', async (req: Request, res: Response) => {
     }
 })
 
-httpServer.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-})
+if (process.env.NODE_ENV !== 'test') {
+    httpServer.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    })
+}
