@@ -4,6 +4,17 @@ import type { ItineraryEvent } from "../../entities/event/types";
 import 'leaflet/dist/leaflet.css'
 import './EventMap.css'
 
+import L from "leaflet";
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+})
+
 type LocationSelectHelper = (lat: number, lng: number) => void
 
 interface MapClickInterceptorProps {
