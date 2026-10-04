@@ -20,13 +20,18 @@ interface EventSidebarProps {
 }
 
 export const EventSidebar = (props: EventSidebarProps) => {
+  const appVersion = import.meta.env.VITE_APP_VERSION || 'v0.0.0';
+  
   const sortedEvents = [...props.events].sort((a, b) => (
     a.start_time.localeCompare(b.start_time)
   ))
 
   return (
     <div className="event-sidebar">
-      <h1>Nomadsync</h1>
+      <div className="sidebar-header">
+        <h1>Nomadsync</h1>
+        <p className="app-version">{appVersion}</p>
+      </div>
 
       <form className="event-form" onSubmit={props.handleSubmit}>
         <label>Create New Event</label>

@@ -9,6 +9,9 @@
     font-size: 2rem;
     color: #0f172a;
 }
+.event-sidebar .app-version {
+    margin-top: 12px;
+}
 
 .event-form {
     display: flex;
