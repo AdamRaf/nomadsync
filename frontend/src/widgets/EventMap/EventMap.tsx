@@ -46,6 +46,7 @@ export const EventMap = ({ events, onLocationSelect }: EventMapProps) => {
       <MapContainer
         center={[-6.2295695, 106.7471172]} // Jakarta's lat lng from Gmap
         zoom={11}
+        zoomControl={false}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

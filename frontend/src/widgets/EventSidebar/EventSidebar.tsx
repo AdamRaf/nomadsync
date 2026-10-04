@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ItineraryEvent } from "../../entities/event/types";
 import './EventSidebar.css'
 
@@ -20,6 +21,8 @@ interface EventSidebarProps {
 }
 
 export const EventSidebar = (props: EventSidebarProps) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   const appVersion = import.meta.env.VITE_APP_VERSION || 'v0.0.0';
   
   const sortedEvents = [...props.events].sort((a, b) => (
@@ -27,81 +30,91 @@ export const EventSidebar = (props: EventSidebarProps) => {
   ))
 
   return (
-    <div className="event-sidebar">
-      <div className="sidebar-header">
-        <h1>Nomadsync</h1>
-        <p className="app-version">{appVersion}</p>
-      </div>
-
-      <form className="event-form" onSubmit={props.handleSubmit}>
-        <label>Create New Event</label>
-        <input
-          type="text"
-          value={props.newEventTitle}
-          onChange={(e) => props.setNewEventTitle(e.target.value)}
-          placeholder="Flight to Mars"
-          disabled={props.loading}
-        />
-
-        <div>
-          <input
-            type="number"
-            value={props.activeLat}
-            onChange={(e) => props.setActiveLat(Number(e.target.value))}
-            placeholder="Lat"
-            disabled={props.loading}
-            step="any"
-          />
-          <input
-            type="number"
-            value={props.activeLng}
-            onChange={(e) => props.setActiveLng(Number(e.target.value))}
-            placeholder="Lng"
-            disabled={props.loading}
-            step="any"
-          />
+    <div className={`event-sidebar-wrapper ${isCollapsed ? 'collapsed' : ''}`}>
+      <button
+        className="sidebar-toggle-btn"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        {isCollapsed ? '>>' : '<<'}
+      </button>
+      <div className={`event-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+        <div className="sidebar-header">
+          <div>
+            <h1>Nomadsync</h1>
+            <p className="app-version">{appVersion}</p>
+          </div>
         </div>
 
-        <button type="submit" disabled={props.loading || !props.newEventTitle}>
-          {props.loading ? 'Saving...' : 'Save'}
-        </button>
-      </form>
+        <form className="event-form" onSubmit={props.handleSubmit}>
+          <label>Create New Event</label>
+          <input
+            type="text"
+            value={props.newEventTitle}
+            onChange={(e) => props.setNewEventTitle(e.target.value)}
+            placeholder="Flight to Mars"
+            disabled={props.loading}
+          />
 
-      <ul className="event-list">
-        {sortedEvents.map((event) => (
-          <li key={event.id} className="event-card">
-            {props.editngId === event.id ? (
-              <div>
-                <input
-                  type="text"
-                  value={props.editTitle}
-                  onChange={(e) => props.setEditTitle(e.target.value)}
-                />
-                <div className="event-card-actions">
-                  <button onClick={() => props.handleUpdate(event.id, event.start_time)}>Save</button>
-                  <button onClick={() => props.setEditingId(null)}>Cancel</button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="event-card-header">
-                  <div>
-                    <h3 className="event-card-title">{event.title}</h3>
-                    <span className="event-card-time">{new Date(event.start_time).toLocaleString()}</span>
+          <div>
+            <input
+              type="number"
+              value={props.activeLat}
+              onChange={(e) => props.setActiveLat(Number(e.target.value))}
+              placeholder="Lat"
+              disabled={props.loading}
+              step="any"
+            />
+            <input
+              type="number"
+              value={props.activeLng}
+              onChange={(e) => props.setActiveLng(Number(e.target.value))}
+              placeholder="Lng"
+              disabled={props.loading}
+              step="any"
+            />
+          </div>
+
+          <button type="submit" disabled={props.loading || !props.newEventTitle}>
+            {props.loading ? 'Saving...' : 'Save'}
+          </button>
+        </form>
+
+        <ul className="event-list">
+          {sortedEvents.map((event) => (
+            <li key={event.id} className="event-card">
+              {props.editngId === event.id ? (
+                <div>
+                  <input
+                    type="text"
+                    value={props.editTitle}
+                    onChange={(e) => props.setEditTitle(e.target.value)}
+                  />
+                  <div className="event-card-actions">
+                    <button onClick={() => props.handleUpdate(event.id, event.start_time)}>Save</button>
+                    <button onClick={() => props.setEditingId(null)}>Cancel</button>
                   </div>
                 </div>
-                <div className="event-card-actions">
-                  <button onClick={() => {
-                    props.setEditingId(event.id);
-                    props.setEditTitle(event.title);
-                  }}>Edit</button>
-                  <button onClick={() => props.handleDelete(event.id)}>Delete</button>
-                </div>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+              ) : (
+                <>
+                  <div className="event-card-header">
+                    <div>
+                      <h3 className="event-card-title">{event.title}</h3>
+                      <span className="event-card-time">{new Date(event.start_time).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="event-card-actions">
+                    <button onClick={() => {
+                      props.setEditingId(event.id);
+                      props.setEditTitle(event.title);
+                    }}>Edit</button>
+                    <button onClick={() => props.handleDelete(event.id)}>Delete</button>
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }
