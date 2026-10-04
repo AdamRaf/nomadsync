@@ -9,6 +9,10 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
+// @ts-expect-error, Leaflet's typings omit `_getIconUrl`,
+// but it must be removed for bundler-compatible marker assets
+delete L.Icon.Default.prototype._getIconUrl;
+
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   iconRetinaUrl: markerIcon2x,
