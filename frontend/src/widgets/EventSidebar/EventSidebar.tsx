@@ -1,6 +1,9 @@
 import { useState } from "react";
 import type { ItineraryEvent } from "../../entities/event/types";
 import './EventSidebar.css'
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
+import { Button } from "@/shared/ui/button"
 
 interface EventSidebarProps {
   events: ItineraryEvent[];
@@ -32,86 +35,115 @@ export const EventSidebar = (props: EventSidebarProps) => {
   return (
     <div className={`event-sidebar-wrapper ${isCollapsed ? 'collapsed' : ''}`}>
       <button
-        className="sidebar-toggle-btn"
+        className="sidebar-toggle-btn absolute z-50 bg-slate-800 text-white p-2 rounded-r-md top-4 -right-10 shadow-md"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         {isCollapsed ? '>>' : '<<'}
       </button>
-      <div className={`event-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      <div className={`event-sidebar bg-slate-50 h-full p-4 flex flex-col gap-4 overflow-y-auto ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
-          <div>
-            <h1>Nomadsync</h1>
-            <p className="app-version">{appVersion}</p>
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+            <h1 className="test-x1 font-bold text-slate-900 tracking-tight">Nomadsync</h1>
+            <p className="text-xs font-mono text-slate-500 bg-slate-200 px-2 py-0.5 rounded">{appVersion}</p>
           </div>
         </div>
 
-        <form className="event-form" onSubmit={props.handleSubmit}>
-          <label>Create New Event</label>
-          <input
-            type="text"
-            value={props.newEventTitle}
-            onChange={(e) => props.setNewEventTitle(e.target.value)}
-            placeholder="Flight to Mars"
-            disabled={props.loading}
-          />
+        <Card className="shadow-sm border-slate-200 shrink-0">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-semibold text-slate-700">Create New Event</CardTitle>
+          </CardHeader>
 
-          <div>
-            <input
-              type="number"
-              value={props.activeLat}
-              onChange={(e) => props.setActiveLat(Number(e.target.value))}
-              placeholder="Lat"
-              disabled={props.loading}
-              step="any"
-            />
-            <input
-              type="number"
-              value={props.activeLng}
-              onChange={(e) => props.setActiveLng(Number(e.target.value))}
-              placeholder="Lng"
-              disabled={props.loading}
-              step="any"
-            />
-          </div>
+          <CardContent className="p-4 pt-0">
+            <form className="flex flex-col gap-3" onSubmit={props.handleSubmit}>
+              <Input
+                type="text"
+                value={props.newEventTitle}
+                onChange={(e) => props.setNewEventTitle(e.target.value)}
+                placeholder="Flight to Mars"
+                disabled={props.loading}
+                className="text-sm"
+              />
 
-          <button type="submit" disabled={props.loading || !props.newEventTitle}>
-            {props.loading ? 'Saving...' : 'Save'}
-          </button>
-        </form>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="number"
+                  value={props.activeLat}
+                  onChange={(e) => props.setActiveLat(Number(e.target.value))}
+                  placeholder="Lat"
+                  disabled={props.loading}
+                  step="any"
+                  className="text-sm"
+                />
+                <Input
+                  type="number"
+                  value={props.activeLng}
+                  onChange={(e) => props.setActiveLng(Number(e.target.value))}
+                  placeholder="Lng"
+                  disabled={props.loading}
+                  step="any"
+                  className="text-sm"
+                />
+              </div>
 
-        <ul className="event-list">
+              <Button
+                type="submit"
+                disabled={props.loading || !props.newEventTitle}
+                className="w-full h-10 font-medium"
+              >
+                {props.loading ? 'Saving...' : 'Save'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <ul className="flex flex-col gap-3">
           {sortedEvents.map((event) => (
-            <li key={event.id} className="event-card">
-              {props.editngId === event.id ? (
-                <div>
-                  <input
-                    type="text"
-                    value={props.editTitle}
-                    onChange={(e) => props.setEditTitle(e.target.value)}
-                  />
-                  <div className="event-card-actions">
-                    <button onClick={() => props.handleUpdate(event.id, event.start_time)}>Save</button>
-                    <button onClick={() => props.setEditingId(null)}>Cancel</button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="event-card-header">
-                    <div>
-                      <h3 className="event-card-title">{event.title}</h3>
-                      <span className="event-card-time">{new Date(event.start_time).toLocaleString()}</span>
+            <Card key={event.id} className="shadow-sm border-slate-200 transition-all hover:border-slate-300">
+              <CardContent className="p-4">
+                {props.editngId === event.id ? (
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="text"
+                      value={props.editTitle}
+                      onChange={(e) => props.setEditTitle(e.target.value)}
+                      className="text-sm"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <Button size="sm" onClick={() => props.handleUpdate(event.id, event.start_time)}>Save</Button>
+                      <Button size="sm" variant="outline" onClick={() => props.setEditingId(null)}>Cancel</Button>
                     </div>
                   </div>
-                  <div className="event-card-actions">
-                    <button onClick={() => {
-                      props.setEditingId(event.id);
-                      props.setEditTitle(event.title);
-                    }}>Edit</button>
-                    <button onClick={() => props.handleDelete(event.id)}>Delete</button>
-                  </div>
-                </>
-              )}
-            </li>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      <div>
+                        <h3 className="font-semibold text-slate-900 text-sm leading-snug">{event.title}</h3>
+                        <p className="text-xs text-slate-500 mt-1">{new Date(event.start_time).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end pt-2 border-t border-slate-100">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          props.setEditingId(event.id);
+                          props.setEditTitle(event.title);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => props.handleDelete(event.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </ul>
       </div>
