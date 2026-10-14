@@ -28,3 +28,8 @@ export const deleteEvent = async (id: number): Promise<void> => {
 export const updateEvent = async (id: number, title: string, start_time: string): Promise<void> => {
     await apiClient.put(`/events/${id}`, { title, start_time });
 }
+
+export const searchLocation = async (query: string) => {
+    const response = await apiClient.get(`/location/search?q=${encodeURIComponent(query)}`);
+    return response.data;
+}

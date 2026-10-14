@@ -180,6 +180,41 @@ app.put('/api/events/:id', async (req: Request, res: Response) => {
     }
 })
 
+
+app.get('/api/location/search', async (req: Request, res: Response) => {
+    try {
+        const { q } = req.query;
+        if (!q || typeof q !== 'string') {
+            return res.status(400).json({ error: 'Query parameter is required' });
+        }
+        
+        const searchParams = `q=${encodeURIComponent(q)}&format=json&limit=1`;
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?${searchParams}`, {
+                headers: {
+                    'User-Agent': 'Nomadsync/0.1.0 (Development)'
+                }
+            }
+        )
+
+        const data = await response.json();
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: 'Location not found' });
+        }
+
+        const { lat, lon, display_name } = data[0];
+
+        res.json({
+            lat: parseFloat(lat),
+            lng: parseFloat(lon),
+            name: display_name,
+        });
+    } catch (err) {
+        console.error('Geocoding error:', err);
+        res.status(500).json({ error: 'Failed to fetch location data' });
+    }
+})
+
 if (process.env.NODE_ENV !== 'test') {
     httpServer.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
